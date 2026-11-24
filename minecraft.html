@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>方塊冒險｜九九乘法尋寶王・寵物技能版</title>
+<style>
+:root{--cream:#fff6d7;--ink:#253324;--grass:#73c34c;--earth:#71482e;--gold:#ffdb62;--line:#1d2a1e}
+*{box-sizing:border-box}
+html{min-height:100%}
+body{margin:0;min-height:100vh;background:#15251f;color:var(--cream);font-family:"Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;overflow-x:hidden}
+button{font:inherit;cursor:pointer}button:focus-visible{outline:4px solid #ffdb62;outline-offset:5px}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 30% 2%,#294c36 0,transparent 60%),repeating-linear-gradient(0deg,transparent 0 29px,#ffffff05 30px 31px),repeating-linear-gradient(90deg,transparent 0 29px,#ffffff05 30px 31px)}
+.layout{width:min(1230px,calc(100% - 32px));margin:20px auto 28px;position:relative;z-index:1}
+.top-hud{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:15px}
+.brand{display:flex;align-items:center;gap:12px;min-width:245px}
+.block-icon{width:49px;height:49px;flex:none;background:#6dba46;border:5px solid #203b20;box-shadow:inset 0 -13px #8c5a37,5px 5px 0 #09140e;image-rendering:pixelated;transform:rotate(-5deg)}
+.brand small{color:#aedaab;font-size:12px;letter-spacing:2px;font-weight:800}.brand strong{display:block;font-size:23px;letter-spacing:1px;color:#fff8d4;text-shadow:3px 3px #101b14}
+.hud-right{display:flex;align-items:center;gap:11px;flex-wrap:wrap;justify-content:flex-end}
+.hud-pill{background:#24392d;border:3px solid #496249;box-shadow:4px 4px #0e1d15;padding:8px 14px;border-radius:7px;min-height:62px}
+.hud-pill small{display:block;color:#bbd4b7;font-size:11px;font-weight:900;letter-spacing:1px;margin-bottom:4px}
+.hearts,.key-slots{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.heart{font-size:26px;line-height:1;text-shadow:2px 3px #601d2c;transition:filter .2s,transform .2s}.heart.lost{filter:grayscale(1);opacity:.3;text-shadow:none}
+.key-slot{font-size:24px;line-height:1;display:inline-block;filter:drop-shadow(2px 2px #0a1a11)}.key-slot.locked{filter:grayscale(1);opacity:.3}
+.game-frame{border:5px solid #587348;background:#304733;box-shadow:0 0 0 5px #0d1b13,0 16px 0 #09160e;border-radius:10px;overflow:hidden}
+.quest-top{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;background:#253728;padding:11px 18px;border-bottom:5px solid #18291d}
+.stage-label{font-size:13px;font-weight:900;color:#d3e5bd}.stage-label b{font-size:17px;color:#ffe78c}
+.quest-title{text-align:center;color:#ffe58f;font-size:18px;font-weight:1000;letter-spacing:1px}
+.stats{text-align:right;font-size:13px;color:#e3efd9;font-weight:800}
+.progress-wrap{background:#1c2d22;padding:9px 18px;display:flex;align-items:center;gap:12px;border-bottom:3px solid #4c6349}
+.progress-track{flex:1;max-width:none;height:12px;border:2px solid #101c13;background:#415445;overflow:hidden;border-radius:2px}.progress-fill{width:0%;height:100%;background:repeating-linear-gradient(90deg,#f4bc34 0 13px,#ffde6d 13px 25px);transition:width .4s}
+.progress-text{font-size:12px;white-space:nowrap;color:#d2e5cb;font-weight:800}
+.question-zone{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(180deg,#6d97a8,#8bbabc);padding:15px 10px 17px;border-bottom:5px solid #5b8549}
+.question-label{background:#233f2e;border:3px solid #18251a;color:#f6ebc6;box-shadow:3px 3px #284b34;padding:9px 12px;font-size:15px;font-weight:900}
+.question-paper{font-weight:1000;font-size:clamp(28px,4vw,42px);color:#352b1c;background:var(--cream);border:5px solid #af8345;box-shadow:5px 5px 0 #513922;min-width:220px;text-align:center;padding:8px 22px;letter-spacing:1px}
+.world{--sky1:#78c4ef;--sky2:#bde8eb;--hill:#74a66c;--hill2:#4e8756;position:relative;height:535px;isolation:isolate;background:linear-gradient(to bottom,var(--sky1) 0%,var(--sky2) 57%,var(--hill) 57% 69%,var(--hill2) 69% 100%);overflow:hidden}
+.world[data-level="2"]{--sky1:#76a5ab;--sky2:#bed8c5;--hill:#658661;--hill2:#37604c}
+.world[data-level="3"]{--sky1:#927cbb;--sky2:#e9a579;--hill:#8a7e62;--hill2:#626b56}
+.world::before{content:"";position:absolute;inset:0 0 25%;background:repeating-linear-gradient(90deg,transparent 0 47px,#ffffff08 48px 49px),repeating-linear-gradient(0deg,transparent 0 47px,#ffffff06 48px 49px);pointer-events:none}
+.pixel-sun{width:66px;height:66px;position:absolute;top:42px;right:11%;background:#ffebb0;box-shadow:0 0 0 12px #ffefc955,0 0 45px #ffdb98;image-rendering:pixelated}
+.cloud{position:absolute;top:57px;left:13%;width:93px;height:24px;background:#fff9e5bd;box-shadow:25px -20px 0 #fff9e5bd,-20px 20px 0 #fff9e5bd,43px 2px 0 #fff9e5bd}.cloud.c2{top:130px;left:69%;transform:scale(.62)}
+.block-mountain{position:absolute;bottom:150px;width:35%;height:170px;background:#4b866d;clip-path:polygon(0 100%,0 65%,15% 65%,15% 44%,34% 44%,34% 22%,51% 22%,51% 0,70% 0,70% 36%,85% 36%,85% 62%,100% 62%,100% 100%);opacity:.55}.block-mountain.m1{left:-7%}.block-mountain.m2{right:-8%;transform:scaleX(-1);background:#3c7968}
+.tree{position:absolute;bottom:125px;width:28px;height:106px;background:#60442c;box-shadow:inset -6px 0 #3f3027;z-index:1}
+.tree::before{content:"";position:absolute;bottom:45px;left:-30px;width:90px;height:84px;background:#367345;box-shadow:inset -15px -16px #2d603d;clip-path:polygon(23% 0,76% 0,76% 20%,95% 20%,95% 73%,70% 73%,70% 100%,25% 100%,25% 73%,0 73%,0 20%,23% 20%)}
+.tree.left{left:6%}.tree.right{right:7%;bottom:145px;transform:scale(.75)}
+.world-floor{position:absolute;bottom:0;height:110px;width:100%;background:repeating-linear-gradient(90deg,#986c3e 0 72px,#805433 72px 76px,#9b724a 76px 143px);border-top:26px solid #5d9c49;box-shadow:0 -8px 0 #3a773c;z-index:1}
+.world-floor::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 38px,#694222 39px 42px)}
+.adventure-tag{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:5;min-width:150px;text-align:center;padding:7px 15px;background:#1b3529db;color:#fff1ae;border:2px solid #9bb083;font-weight:900;font-size:14px;letter-spacing:2px}
+.routes{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:min(91%,940px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,3vw,45px);z-index:3}
+.route{position:relative;height:295px;padding:0;color:inherit;background:transparent;border:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;filter:drop-shadow(7px 9px 0 #10191061);transition:transform .16s,filter .16s;outline-offset:5px;user-select:none}
+.route:not(:disabled):hover{transform:translateY(-8px);filter:drop-shadow(7px 13px 0 #10191088) brightness(1.11)}
+.route:disabled{cursor:default}
+.answer-sign{width:min(140px,90%);min-height:61px;display:flex;align-items:center;justify-content:center;background:#eac78b;border:5px solid #724522;box-shadow:inset 0 0 0 3px #f6deb0,4px 5px 0 #352313;color:#312417;font-size:33px;font-weight:1000;z-index:2;position:relative;transform:rotate(var(--tilt));transition:background .2s}
+.route:nth-child(1){--tilt:-2deg}.route:nth-child(2){--tilt:1deg}.route:nth-child(3){--tilt:2deg}
+.route-caption{color:#fff7d7;background:#1d2e23e3;padding:5px 12px;font-size:12px;font-weight:900;margin-top:5px;border:2px solid #46634d;z-index:3;white-space:nowrap}
+.route-art{position:relative;width:min(150px,83%);height:169px;display:block;margin-top:7px;transition:filter .4s,transform .4s}
+.route-art::before,.route-art::after{content:"";position:absolute;display:block}
+.route .approach{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);height:53px;width:76%;z-index:-1;background:repeating-linear-gradient(180deg,#bfa56f 0 15px,#94794a 15px 19px);clip-path:polygon(28% 0,72% 0,100% 100%,0 100%)}
+.world[data-scene="door"] .route-art{background:repeating-linear-gradient(90deg,#804626 0 18px,#a86c3b 18px 34px,#61361f 34px 38px);border:12px solid #4e3828;box-shadow:inset 0 0 0 4px #bc8c4e,7px 6px #35291d}
+.world[data-scene="door"] .route-art::before{right:13px;top:52%;height:15px;width:15px;background:#ffe16d;border:3px solid #ad7a29}
+.world[data-scene="cave"] .route-art{border-radius:48% 48% 15% 15%;background:radial-gradient(ellipse at 50% 68%,#100f24 0 42%,#343448 65%,#7b7682 67% 100%);border:13px solid #827e86;box-shadow:8px 7px #454247,inset 0 0 35px #000}
+.world[data-scene="cave"] .route-art::before{width:100%;height:32px;top:-3px;left:0;background:#aaa6aa;clip-path:polygon(0 0,16% 0,24% 90%,35% 0,54% 0,60% 74%,78% 0,100% 0)}
+.world[data-scene="road"] .route-art{border-left:16px solid #547044;border-right:16px solid #547044;background:repeating-linear-gradient(180deg,#a9a18a 0 24px,#aaa18b 24px 27px,#817a63 27px 31px);clip-path:polygon(35% 0,65% 0,100% 100%,0 100%);box-shadow:none}
+.world[data-scene="road"] .route-art::before{top:28px;left:50%;width:20px;height:83px;background:#765333;transform:translateX(-50%)}
+.world[data-scene="road"] .route-art::after{top:12px;left:22%;width:62%;height:42px;background:#e8ca80;border:5px solid #66482d;clip-path:polygon(0 0,82% 0,100% 50%,82% 100%,0 100%)}
+.world[data-scene="bridge"] .route-art{background:linear-gradient(180deg,transparent 0 17%,#161d26 17% 100%);border-left:12px solid #38413b;border-right:12px solid #38413b;box-shadow:7px 5px #2c322e}
+.world[data-scene="bridge"] .route-art::before{inset:20px 14px 8px;background:repeating-linear-gradient(180deg,#c69862 0 13px,#3a291b 13px 18px);transform:perspective(180px) rotateX(24deg)}
+.world[data-scene="bridge"] .route-art::after{top:20px;left:0;width:100%;height:12px;background:#8b6b45}
+.world[data-scene="ruins"] .route-art{background:#18271f;border:19px solid #9b9f86;border-bottom:11px solid #676e60;border-radius:52px 52px 3px 3px;box-shadow:0 -15px 0 #676e60,inset 0 0 18px #88be74,7px 7px #364438}
+.world[data-scene="ruins"] .route-art::before{inset:0;background:linear-gradient(135deg,transparent 0 43%,#d6e5a2 44% 46%,transparent 47% 100%);opacity:.25}
+.world[data-scene="ruins"] .route-art::after{bottom:22px;left:36%;height:28px;width:30%;background:#b7d778;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);filter:drop-shadow(0 0 8px #caff8b)}
+.world[data-scene="mine"] .route-art{background:repeating-linear-gradient(0deg,#38333a 0 18px,#25262c 18px 22px);border:13px solid #8e663b;border-top:23px solid #a27a4b;box-shadow:inset 0 0 35px #0c1513,7px 6px #4d321c}
+.world[data-scene="mine"] .route-art::before{bottom:0;left:28%;width:44%;height:80%;background:repeating-linear-gradient(0deg,#a7a19b 0 6px,transparent 6px 22px),linear-gradient(90deg,#c1b8a0 0 12%,#242d2e 12% 88%,#c1b8a0 88% 100%);clip-path:polygon(35% 0,65% 0,100% 100%,0 100%)}
+.world[data-scene="mine"] .route-art::after{top:-17px;left:50%;width:15px;height:15px;background:#ffe189;box-shadow:0 0 18px 8px #ffde7840}
+.route.success .answer-sign{background:#d3ff9a;border-color:#3c8e44}.route.success .route-art{filter:brightness(1.45) drop-shadow(0 0 17px #f8ea83)}.route.success .route-art::after{opacity:.1}
+.route.failed .answer-sign{background:#ffd1c4;border-color:#e05038}
+.hero-zone{position:absolute;bottom:29px;left:50%;transform:translateX(-50%);width:160px;height:195px;z-index:8;pointer-events:none;transition:transform .62s cubic-bezier(.32,.65,.22,1)}
+.hero-zone.walking{transform:translate(calc(-50% + var(--dx,0px)),-93px) scale(.75)}
+.hero-zone.walking .sprite{animation:walking .25s step-end infinite}
+.hero-zone.celebrate .sprite{animation:cheer .42s ease-in-out infinite alternate}
+/* 跟隨的方塊寵物：永遠陪在主角旁，移動時延遲一步跟上 */
+.pet-zone{--pet-side:-105px;position:absolute;bottom:30px;left:50%;transform:translateX(calc(-50% + var(--pet-side)));width:100px;height:134px;z-index:9;pointer-events:none;transition:transform .86s cubic-bezier(.3,.6,.25,1) .14s}
+.pet-zone.walking{transform:translate(calc(-50% + var(--pet-side) + var(--dx,0px)),-76px) scale(.83)}
+.pet-zone.walking .pet-sprite{animation:pet-walk .27s step-end infinite}
+.pet-zone.celebrate .pet-sprite{animation:pet-hop .5s ease-in-out infinite alternate}
+.pet-sprite{width:93px;height:105px;margin:auto;filter:drop-shadow(4px 6px 0 #13221a90)}
+.pet-sprite svg{width:100%;height:100%;image-rendering:pixelated}
+.pet-shadow{position:absolute;width:72px;height:14px;left:50%;bottom:12px;transform:translateX(-50%);background:#08231866;border-radius:50%}
+.pet-name{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);background:#223e27eb;border:2px solid #83ae63;color:#fff4be;padding:2px 7px;font-size:11px;font-weight:900;white-space:nowrap}
+@keyframes pet-walk{0%{translate:0 -3px}50%{translate:0 3px}}
+@keyframes pet-hop{from{translate:0 0}to{translate:0 -12px}}
+.sprite{height:174px;width:140px;margin:auto;filter:drop-shadow(7px 8px 0 #13221a90)}
+.sprite svg{width:100%;height:100%;image-rendering:pixelated}
+.hero-shadow{position:absolute;width:95px;height:19px;border-radius:50%;bottom:8px;left:50%;transform:translateX(-50%);background:#0c201a84}
+.hero-name{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);background:#1b3021e8;padding:2px 8px;font-size:12px;color:#fff1bd;white-space:nowrap;border:2px solid #638d56;font-weight:900}
+@keyframes walking{0%{translate:0 -4px}50%{translate:0 4px}}
+@keyframes cheer{0%{translate:0 0}100%{translate:0 -18px}}
+.feedback{position:absolute;z-index:15;left:50%;top:54%;transform:translate(-50%,-50%);padding:14px 25px;border:5px solid #a6bd70;background:#1e452fe8;box-shadow:6px 6px 0 #0d1c14;font-weight:1000;color:#fff8c3;font-size:23px;text-align:center;min-width:220px;pointer-events:none}
+.feedback.hidden{display:none}
+.feedback.bad{background:#4d2025f2;border-color:#ee6262}
+.trap{position:absolute;z-index:20;inset:0;background:#180e13a6;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:8px}
+.trap.hidden{display:none}
+.trap-symbol{font-size:110px;line-height:1;filter:drop-shadow(5px 7px 1px #22171c);animation:trap-pop .75s ease-out both}
+.trap-mark{font-size:95px;font-weight:1000;color:#ff3437;line-height:1;text-shadow:5px 6px 0 #480c16,0 0 15px #fff;animation:trap-pop .4s ease-out both}
+.trap-description{background:#3e2026;border:4px solid #ef5a4e;padding:9px 22px;font-size:20px;font-weight:1000;text-align:center}
+@keyframes trap-pop{0%{scale:.15;rotate:-17deg;opacity:0}55%{scale:1.2;opacity:1}100%{scale:1;rotate:0;opacity:1}}
+.tip-line{padding:12px 18px;background:#203427;border-top:5px solid #416147;font-size:13px;color:#bdd0bc;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tip-line strong{color:#f4e4a5}
+.overlay{position:fixed;z-index:100;inset:0;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px;background:#07130bdc;backdrop-filter:blur(5px)}.overlay.hidden{display:none}
+.modal{width:min(760px,100%);border:6px solid #947044;background:#294231;color:#fff7df;box-shadow:0 0 0 6px #142419,12px 14px 0 #051009;padding:26px;position:relative;text-align:center}
+.modal::before{content:"";position:absolute;inset:7px;border:2px dashed #72845466;pointer-events:none}
+.modal h1,.modal h2{font-size:clamp(29px,4vw,42px);font-weight:1000;color:#ffe584;line-height:1.25;margin:4px auto 12px;text-shadow:4px 4px #142118}
+.modal p{line-height:1.7;color:#e7efdf;margin:8px auto;font-size:16px}
+.eyebrow{font-size:12px;font-weight:1000;letter-spacing:4px;color:#9bd48e;margin-bottom:7px}
+.intro-rules{background:#1e3429;border:3px solid #628057;text-align:left;margin:17px auto;padding:12px 18px;display:grid;grid-template-columns:1fr 1fr;gap:7px 17px;line-height:1.65;font-size:14px}
+.intro-rules span::before{content:"▣";color:#ffd36b;margin-right:9px}
+.character-title{font-weight:1000;color:#ffe5a3;margin:14px auto 10px}
+.char-options{display:grid;grid-template-columns:1fr 1fr;gap:13px;width:min(455px,100%);margin:0 auto}
+.char-option{border:4px solid #58775c;background:#1c3026;min-height:162px;color:#fff3d1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;position:relative;transition:transform .15s,background .15s,border-color .15s}
+.char-option:hover{transform:translateY(-4px)}
+.char-option.selected{background:#365d34;border-color:#ffe077;box-shadow:inset 0 0 0 3px #89ad49}
+.char-option .sprite{height:105px;width:88px;filter:drop-shadow(3px 3px 0 #0008)}
+.char-option b{font-size:18px}.char-option small{font-size:12px;color:#c0d7b6}
+.char-option.selected::after{content:"✔ 已選擇";position:absolute;top:4px;right:5px;font-weight:1000;color:#ffe58c;font-size:12px}
+/* 選完角色才會開啟的「選寵物」頁面 */
+.pet-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:min(625px,100%);margin:15px auto}
+.pet-option{position:relative;min-height:195px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#1d3328;border:4px solid #5d7961;color:#fff3d1;transition:transform .18s,background .18s,border-color .18s}
+.pet-option:hover{transform:translateY(-5px);background:#304a30}
+.pet-option.selected{background:#385f35;border-color:#ffe17a;box-shadow:inset 0 0 0 3px #8cba57}
+.pet-option.selected::after{content:'✔ 已選擇';position:absolute;right:4px;top:4px;font-size:12px;font-weight:900;color:#ffe595}
+.pet-art{width:118px;height:120px;filter:drop-shadow(5px 6px 0 #0007)}
+.pet-art svg{height:100%;width:100%;image-rendering:pixelated}
+.pet-option b{font-size:19px}.pet-option small{font-size:12px;color:#c2d9ba}
+.pet-select-hint{color:#c4e4b5;font-size:15px;font-weight:800}
+.pet-choice-info{font-size:15px;color:#ffe6a0;font-weight:900}
+@media(max-width:700px){.pet-zone{--pet-side:-68px;bottom:17px;width:76px;height:109px}.pet-sprite{width:70px;height:80px}.pet-shadow{width:57px;bottom:10px}.pet-name{font-size:10px;bottom:-5px}.pet-options{gap:6px}.pet-option{min-height:160px;border-width:3px;padding:6px 2px}.pet-art{height:85px;width:87px}.pet-option b{font-size:15px}.pet-option small{font-size:10px}}
+@media(max-width:390px){.pet-options{gap:4px}.pet-option{min-height:143px}.pet-art{height:76px;width:75px}.pet-option b{font-size:14px}}
+.action{margin:17px auto 3px;background:#e1b251;color:#322819;font-size:19px;font-weight:1000;border:4px solid #77532f;padding:12px 28px;box-shadow:5px 6px 0 #09180e;transition:transform .15s}
+.action:hover:not(:disabled){transform:translateY(-3px);background:#ffdc76}.action:disabled{opacity:.48;cursor:not-allowed}
+.action.secondary{background:#77c56b;border-color:#2e7139}.action.secondary:hover{background:#a5e28e}
+.modal-buttons{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px}
+.key-prize{font-size:88px;line-height:1.2;margin:14px auto;animation:cheer .55s alternate infinite}
+.key-line{font-size:25px;color:#ffdf7d;font-weight:1000}
+.chest-showcase{position:relative;width:330px;height:255px;margin:20px auto 5px}
+.chest-glow{position:absolute;left:60px;top:50px;width:205px;height:160px;background:#f5d5723b;filter:blur(37px);border-radius:50%}
+.chest{position:absolute;left:40px;bottom:10px;width:250px;height:180px;z-index:4;filter:drop-shadow(8px 10px 0 #0a1810)}
+.chest-lid{position:absolute;left:0;top:5px;width:250px;height:76px;background:repeating-linear-gradient(90deg,#986034 0 30px,#b57c40 30px 60px);border:10px solid #51301d;border-bottom:7px solid #422714;border-radius:35px 35px 2px 2px;box-shadow:inset 0 10px #d3974e;transform-origin:0 90%;transition:transform .9s cubic-bezier(.25,.7,.3,1);z-index:5}
+.chest-body{position:absolute;left:0;bottom:0;width:250px;height:111px;background:repeating-linear-gradient(90deg,#88512a 0 35px,#ad6e39 35px 65px);border:10px solid #4a2b1b;box-shadow:inset 0 13px #c18b42;z-index:4}
+.chest-metal{position:absolute;left:106px;top:71px;width:40px;height:54px;background:#fbd960;border:7px solid #986526;z-index:7}
+.chest.open .chest-lid{transform:translateY(-32px) rotate(-24deg)}
+.chest.open .chest-metal{opacity:.3}
+.coin-spray{position:absolute;left:161px;top:130px;width:10px;height:10px;z-index:6;pointer-events:none}
+.coin{display:block;position:absolute;width:25px;height:25px;background:linear-gradient(135deg,#ffe675,#e4a326);border:4px solid #a87413;box-shadow:inset 0 0 0 3px #f2c948,3px 3px 0 #4d2b04;opacity:0;--tx:0px;--ty:110px;--delay:0s}
+.open .coin{animation:coin-fall 1.7s var(--delay) cubic-bezier(.18,.55,.35,1) forwards}
+@keyframes coin-fall{0%{opacity:0;transform:translate(0,0) scale(.4) rotate(0)}16%{opacity:1}38%{transform:translate(calc(var(--tx) * .7),-88px) scale(1.25) rotate(130deg)}100%{opacity:1;transform:translate(var(--tx),var(--ty)) rotate(410deg)}}
+.victory-label{font-size:clamp(26px,5vw,48px);color:#ffdf76;text-shadow:3px 4px #1e2918;font-weight:1000;animation:trap-pop .6s both;margin:10px auto}
+.hidden{display:none!important}
+.small-result{font-size:14px;color:#bed8ba;margin-top:8px}
+@media(max-width:700px){.layout{width:min(100% - 16px,680px);margin:10px auto 22px}.top-hud{justify-content:center}.brand{justify-content:center}.hud-right{justify-content:center}.hud-pill{padding:7px 10px}.quest-top{grid-template-columns:1fr 1fr;padding:9px}.quest-title{grid-column:1/-1;grid-row:1}.stats{grid-column:2;grid-row:2}.stage-label{grid-column:1;grid-row:2}.world{height:455px}.route{height:255px}.routes{gap:5px;width:96%;top:68px}.route-art{width:90%;height:142px}.answer-sign{font-size:26px;min-height:53px;border-width:4px}.route-caption{font-size:11px;padding:5px}.hero-zone{bottom:14px;width:135px;height:165px}.sprite{height:145px;width:120px}.hero-shadow{bottom:7px}.world-floor{height:91px;border-top-width:17px}.tree{transform:scale(.7);transform-origin:bottom}.tree.right{transform:scale(.55)}.question-zone{padding:13px 8px}.question-paper{font-size:31px}.question-label{font-size:12px}.modal{padding:16px}.intro-rules{grid-template-columns:1fr;gap:6px}.char-option{min-height:140px}.char-option .sprite{height:90px;width:75px}}
+@media(max-width:390px){.route-art{height:125px}.route-caption{font-size:10px;padding:4px 6px}.world{height:420px}.hero-zone{bottom:4px}.answer-sign{min-height:47px;font-size:24px}.route .approach{height:35px}.question-paper{min-width:184px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* 寵物專屬技能：豬自動防護、狗直接提示、貓排除錯路 */
+.pet-skill-bar{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;background:#2a4332;border-bottom:4px solid #182e23;padding:10px 16px}
+.pet-skill-icon{font-size:34px;line-height:1;filter:drop-shadow(2px 3px #0f2015)}
+.pet-skill-info{flex:1;min-width:205px;display:flex;flex-direction:column;gap:4px}
+.pet-skill-info strong{color:#ffe297;font-size:16px;font-weight:1000}
+.pet-skill-info small{color:#ddf2d6;font-size:13px;font-weight:700}
+.pet-skill-use{border:3px solid #8a622e;background:#ffdd87;box-shadow:3px 4px #101e14;color:#2c301f;padding:9px 17px;font-size:14px;font-weight:1000;min-width:130px}
+.pet-skill-use:hover:not(:disabled){background:#fff1b7;transform:translateY(-2px)}
+.pet-skill-use:disabled{color:#c9d5cb;border-color:#47584c;background:#55695b;box-shadow:none;cursor:default;opacity:.75}
+.pet-skill-use.auto-skill{background:#eeb2c2;color:#522c38;border-color:#b7778a}
+.route.hint-correct .answer-sign{background:#c1ffa1!important;border-color:#25a94c!important;box-shadow:0 0 0 5px #eeff879e,0 0 27px #e1ff83,4px 5px 0 #264831!important;animation:hint-pulse .75s ease-in-out infinite alternate}
+.route.hint-correct .route-art{filter:brightness(1.35) drop-shadow(0 0 18px #c6ff71)}
+.route.hint-removed{filter:grayscale(1);opacity:.32;cursor:not-allowed}
+.route.hint-removed .answer-sign{text-decoration:line-through;background:#69756b;color:#ffffff}
+.trap.protected{background:#0f2c1cc9}
+.trap.protected .trap-mark{color:#a1ff84;text-shadow:4px 5px #173821,0 0 16px #c3ff80}
+.trap.protected .trap-description{background:#244a30;border-color:#8dea77}
+@keyframes hint-pulse{from{scale:1;filter:brightness(1)}to{scale:1.055;filter:brightness(1.2)}}
+.pet-option .power-description{display:block;font-size:12px;font-weight:900;color:#ffe093;line-height:1.5;padding:0 5px;max-width:180px}
+.pet-skill-intro{background:#1c382a;border:3px solid #547f50;padding:11px;margin:12px auto 0;text-align:left;font-size:14px;line-height:1.8;max-width:590px;color:#f8ecc4}
+.pet-skill-intro b{color:#ffe58b}
+@media(max-width:700px){.pet-skill-bar{gap:7px;padding:8px}.pet-skill-icon{font-size:26px}.pet-skill-info{min-width:160px}.pet-skill-info strong{font-size:14px}.pet-skill-info small{font-size:11px}.pet-skill-use{padding:8px 10px;font-size:12px;min-width:104px}.pet-option .power-description{font-size:10px;line-height:1.35}.pet-option{min-height:183px}}
+@media(max-width:390px){.pet-skill-info{min-width:145px}.pet-skill-use{min-width:96px}.pet-option .power-description{font-size:9px}.pet-option{min-height:170px}}
+/* 九枚方塊寶石徽章：每答對連續五題取得一枚 */
+.medal-panel{background:#192b21;border-bottom:4px solid #536b43;padding:10px 16px 11px}
+.medal-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px 12px;margin-bottom:8px;font-size:14px;font-weight:900;color:#ffdf88}
+.medal-heading small{font-size:12px;color:#bddbc1;font-weight:700}
+.medal-collection{display:flex;justify-content:center;flex-wrap:wrap;align-items:center;gap:5px 8px}
+.medal-slot{display:inline-flex;flex-direction:column;justify-content:center;align-items:center;gap:0;width:51px;padding:2px 1px;color:#d8f1d1;font-size:11px;font-weight:900;filter:drop-shadow(2px 3px #080d09)}
+.medal-symbol{display:block;width:43px;height:49px;line-height:0}
+.medal-symbol svg{display:block;width:100%;height:100%;image-rendering:pixelated}
+.medal-slot:not(.earned) .medal-symbol{filter:grayscale(1) brightness(.48);opacity:.58}
+.medal-slot:not(.earned) .medal-number{color:#849584}
+.medal-slot.earned{animation:medal-reveal .4s backwards}
+@keyframes medal-reveal{0%{transform:scale(.6);opacity:.25}75%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.intro-medal-demo{margin:10px auto 8px;padding:8px;background:#1d3428;border:2px solid #627b50;width:min(540px,100%);font-size:13px;font-weight:800;color:#ffe9a9}
+.intro-medal-demo .medal-collection{margin-top:6px;gap:2px 5px}
+.intro-medal-demo .medal-slot{width:39px}
+.intro-medal-demo .medal-symbol{width:34px;height:38px}
+.intro-medal-demo .medal-number{font-size:10px}
+.medal-award{position:fixed;top:24%;left:50%;transform:translateX(-50%);z-index:90;pointer-events:none;text-align:center;min-width:250px;max-width:calc(100% - 36px);padding:14px 22px;background:#203b2ff2;border:5px solid #f8d46c;box-shadow:0 0 0 5px #101e15,8px 9px #0007;animation:medal-toast .6s both}
+.medal-award .medal-symbol{width:98px;height:114px;margin:0 auto 5px;filter:drop-shadow(0 0 15px #ffd973)}
+.medal-award b{display:block;font-size:25px;color:#ffe58c;text-shadow:2px 3px #121d0d}
+.medal-award span.award-name{display:block;margin-top:3px;font-size:15px;color:#fffbe6}
+@keyframes medal-toast{0%{opacity:0;transform:translateX(-50%) scale(.5)}65%{opacity:1;transform:translateX(-50%) scale(1.08)}100%{transform:translateX(-50%) scale(1)}}
+.medal-results{border:3px solid #708956;background:#1b3025;padding:10px 8px;margin:14px auto 6px;max-width:575px}
+.medal-results h3{font-size:18px;margin:0 0 5px;color:#ffe38a}
+.medal-results p{font-size:12px;margin:4px auto 0}
+.medal-results .medal-collection{gap:3px 5px}
+.medal-results .medal-slot{width:50px}
+@media(max-width:700px){.medal-panel{padding:8px 7px}.medal-heading{justify-content:center;font-size:13px;text-align:center}.medal-heading small{font-size:11px}.medal-collection{gap:1px 2px}.medal-slot{width:calc((100% - 16px)/9);min-width:32px;font-size:10px}.medal-symbol{width:min(39px,100%);height:42px}.intro-medal-demo .medal-slot{width:calc((100% - 16px)/9);min-width:28px}.medal-results .medal-slot{width:calc((100% - 16px)/9);min-width:28px}.medal-results .medal-symbol{height:40px}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <header class="top-hud">
+    <div class="brand"><div class="block-icon" aria-hidden="true"></div><div><small>PIXEL TREASURE QUEST</small><strong>九九乘法尋寶王</strong></div></div>
+    <div class="hud-right">
+      <div class="hud-pill" aria-label="剩餘生命值"><small>❤️ 生命值 <span id="lifeCount">5</span> / 5</small><div class="hearts" id="hearts"></div></div>
+      <div class="hud-pill" aria-label="收集鑰匙進度"><small>🗝️ 冒險鑰匙 <span id="keyCount">0</span> / 3</small><div class="key-slots" id="keySlots"></div></div>
+    </div>
+  </header>
+  <main class="game-frame">
+    <div class="quest-top">
+      <div class="stage-label">冒險地圖 <b id="levelLabel">第 1 關｜綠野森林</b></div>
+      <div class="quest-title">⛏️ 乘法解謎 · 尋找三把鑰匙 ⛏️</div>
+      <div class="stats">第 <b id="questionNumber">1</b> / 15 題　｜　答對 <b id="rightCount">0</b>　答錯 <b id="wrongCount">0</b></div>
+    </div>
+    <div class="progress-wrap"><span class="progress-text">尋寶進度</span><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div><span class="progress-text" id="progressText">0 / 45</span></div>
+    <div class="medal-panel" aria-label="冒險徽章收藏進度">
+      <div class="medal-heading"><span>🏅 徽章 <b id="medalCount">0</b> / 9</span><span>🔥 目前連續答對 <b id="streakCount">0</b> 題｜下一枚 <b id="streakProgress">0</b> / 5</span><small>💡 連續答對 5 題，即獲得 1 枚彩色徽章！</small></div>
+      <div class="medal-collection" id="medalCollection" aria-live="polite"></div>
+    </div>
+    <div class="pet-skill-bar" aria-label="寵物專屬技能">
+      <div class="pet-skill-icon" id="skillIcon" aria-hidden="true">🐾</div>
+      <div class="pet-skill-info"><strong id="skillName">🐾 寵物技能</strong><small id="skillDescription" aria-live="polite">選擇寵物後即可使用專屬技能</small></div>
+      <button type="button" class="pet-skill-use" id="skillButton" onclick="usePetSkill()" disabled>尚未選擇</button>
+    </div>
+    <div class="question-zone"><span class="question-label">📜 解除機關密碼</span><div class="question-paper" id="questionText">? × ? = ?</div></div>
+    <section class="world" id="world" data-level="1" data-scene="door" aria-label="冒險選路場景">
+      <div class="pixel-sun"></div><div class="cloud"></div><div class="cloud c2"></div>
+      <div class="block-mountain m1"></div><div class="block-mountain m2"></div><div class="tree left"></div><div class="tree right"></div><div class="world-floor"></div>
+      <div class="adventure-tag" id="sceneName">🏰 古堡三扇門</div>
+      <div class="routes" id="routes" aria-label="三條答案路線"></div>
+      <div class="hero-zone" id="heroZone"><div class="sprite" id="heroSprite"></div><div class="hero-shadow"></div><div class="hero-name" id="heroName">冒險主角</div></div>
+      <div class="pet-zone hidden" id="petZone" aria-label="陪伴冒險的寵物"><div class="pet-sprite" id="petSprite"></div><div class="pet-shadow"></div><div class="pet-name" id="petName">寵物</div></div>
+      <div class="feedback hidden" id="feedback" role="status" aria-live="polite"></div>
+      <div class="medal-award hidden" id="medalAward" role="status" aria-live="polite"><div class="medal-symbol" id="awardedMedal"></div><b>🏅 獲得新徽章！</b><span class="award-name" id="awardName"></span></div>
+      <div class="trap hidden" id="trap" aria-live="assertive"><div class="trap-symbol" id="trapSymbol">💥</div><div class="trap-mark">✖</div><div class="trap-description" id="trapDescription">觸發陷阱！損失 1 顆愛心</div></div>
+    </section>
+    <div class="tip-line"><span>🎮 <strong>玩法：</strong>點選 3 條路線中的正確答案，也可以按鍵盤 1、2、3</span><span>❗ 答錯扣 1 顆愛心，生命歸零就必須從頭開始</span></div>
+  </main>
+</div>
+<!-- 首頁、選擇角色 -->
+<div class="overlay" id="introScreen" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+  <div class="modal">
+    <div class="eyebrow">BLOCK WORLD ADVENTURE</div>
+    <h1 id="introTitle">⛏️ 九九乘法 · 冒險尋寶</h1>
+    <p>森林深處藏著一只神祕寶箱！想獲得裡面的金幣，<br>就要破解路上的乘法機關，並蒐集 <b style="color:#ffdb6d">3 把冒險鑰匙</b>。</p>
+    <div class="intro-rules">
+      <span>總共 <b>3 關</b>，每關 <b>15 題</b>，共 45 道乘法題。</span>
+      <span>每題會出現 <b>3 個答案</b>，選出正確的路。</span>
+      <span>從 <b>5 顆愛心</b>開始，答錯就會失去 1 顆。</span>
+      <span>答錯會觸發 <b>TNT、蝙蝠、路障</b>等陷阱。</span>
+      <span>每通過 1 關就可獲得 <b>1 把鑰匙</b>。</span>
+      <span>每 <b>連續答對 5 題</b>，就獲得 1 枚徽章！</span>
+      <span>共有 <b>9 種顏色徽章</b>；45 題全對可集滿 9 枚。</span>
+      <span>答錯會 <b>中斷連勝</b>，但不會失去已獲得的徽章。</span>
+      <span>集滿 <b>3 把鑰匙</b>，才能打開最終寶箱！</span>
+      <span>先選 <b>主角</b>、再選 <b>寵物</b>，寵物會一路跟隨你！</span>
+      <span>每隻寵物各有一項 <b>不同技能</b>，每局只能使用一次。</span>
+    </div>
+    <div class="intro-medal-demo">🏅 九枚不同顏色的像素徽章<div class="medal-collection" id="introMedals"></div></div>
+    <div class="character-title">✨ 選擇你的冒險角色 ✨</div>
+    <div class="char-options">
+      <button type="button" class="char-option" id="chooseSteve" onclick="selectCharacter('steve')" aria-pressed="false"><div class="sprite" id="startSteve"></div><b>史蒂夫 Steve</b><small>勇敢的尋寶家</small></button>
+      <button type="button" class="char-option" id="chooseCreeper" onclick="selectCharacter('creeper')" aria-pressed="false"><div class="sprite" id="startCreeper"></div><b>苦力怕 Creeper</b><small>方塊世界探險者</small></button>
+    </div>
+    <button class="action" id="startButton" onclick="goToPetSelect()" disabled>先選擇一位角色</button>
+  </div>
+</div>
+<!-- 第二步：選擇具有不同技能的寵物（豬、狗、貓） -->
+<div class="overlay hidden" id="petSelectScreen" role="dialog" aria-modal="true" aria-labelledby="petSelectTitle">
+  <div class="modal">
+    <div class="eyebrow">CHOOSE YOUR ADVENTURE COMPANION</div>
+    <h2 id="petSelectTitle">🐾 選擇你的冒險寵物</h2>
+    <p>主角已準備好！請選擇擁有<b style="color:#ffe080">專屬技能</b>的方塊寵物，<br>牠會跟著你走向每一道門、洞穴與尋寶路線。</p>
+    <div class="pet-choice-info" id="chosenHeroInfo">冒險主角：尚未選擇</div>
+    <div class="pet-options">
+      <button type="button" class="pet-option" id="choosePig" onclick="selectPet('pig')" aria-pressed="false"><div class="pet-art" id="startPig"></div><b>🐷 豬</b><small>粉紅色方塊豬</small><span class="power-description">🛡️ 擋住一次答錯扣血<br>自動生效</span></button>
+      <button type="button" class="pet-option" id="chooseDog" onclick="selectPet('dog')" aria-pressed="false"><div class="pet-art" id="startDog"></div><b>🐶 狗（狼）</b><small>忠心的冒險夥伴</small><span class="power-description">🐾 提示一次正確答案<br>自己點選才算答對</span></button>
+      <button type="button" class="pet-option" id="chooseCat" onclick="selectPet('cat')" aria-pressed="false"><div class="pet-art" id="startCat"></div><b>🐱 貓</b><small>靈巧的探險夥伴</small><span class="power-description">🌙 排除一次錯誤路線<br>把三選一變成二選一</span></button>
+    </div>
+    <div class="pet-skill-intro"><b>🐷 豬・防護盾：</b>首次答錯時自動抵擋 1 顆愛心損失。<br><b>🐶 狗・嗅覺提示：</b>點擊技能鈕，讓正確答案發光 1 次。<br><b>🐱 貓・夜視眼：</b>點擊技能鈕，排除一個錯誤選項 1 次。<br>💡 每局限用 1 次；答錯依然會中斷連勝。重新挑戰就會恢復技能。</div>
+    <div class="modal-buttons">
+      <button type="button" class="action secondary" onclick="returnToHeroSelect()">← 返回選角色</button>
+      <button type="button" class="action" id="confirmPetButton" onclick="startAdventure()" disabled>請先選擇寵物</button>
+    </div>
+  </div>
+</div>
+<!-- 每關取得鑰匙 -->
+<div class="overlay hidden" id="levelScreen" role="dialog" aria-modal="true" aria-labelledby="levelTitle">
+  <div class="modal"><div class="eyebrow">MISSION COMPLETED</div><h2 id="levelTitle">關卡完成！</h2><div class="key-prize">🗝️</div><div class="key-line" id="keyReward">取得第 1 把鑰匙！</div><p id="levelMessage">繼續前往下一張尋寶地圖吧！</p><button class="action secondary" id="continueButton" onclick="continueAdventure()">前往下一關 ➜</button></div>
+</div>
+<!-- 沒有生命，遊戲失敗 -->
+<div class="overlay hidden" id="failScreen" role="dialog" aria-modal="true" aria-labelledby="failTitle">
+  <div class="modal"><div class="eyebrow">GAME OVER</div><h2 id="failTitle" style="color:#ff8585">💔 闖關失敗 請重頭開始</h2><p>5 顆愛心都用完了！<br>換一條路、帶著寵物再挑戰一次乘法謎題！</p><div class="small-result" id="failSummary"></div><div class="modal-buttons"><button class="action secondary" onclick="restartSameCharacter()">重新挑戰</button><button class="action" onclick="backToCharacterSelect()">更換角色／寵物</button></div></div>
+</div>
+<!-- 最後寶箱 -->
+<div class="overlay hidden" id="treasureScreen" role="dialog" aria-modal="true" aria-labelledby="treasureTitle">
+  <div class="modal"><div class="eyebrow">THE FINAL TREASURE</div><h2 id="treasureTitle">🏆 你找到了神祕寶箱！</h2><p id="treasureInstructions">三關的乘法機關都破解了！現在你手中握有三把鑰匙。</p><div class="key-line" id="treasureKeys">🗝️ 🗝️ 🗝️</div>
+    <div class="medal-results"><h3>🏅 本次尋寶徽章：<span id="finalMedalCount">0 / 9</span> 枚</h3><div class="medal-collection" id="finalMedals"></div><p>💡 每連續答對 5 題可獲得 1 枚，45 題全部答對可集滿 9 枚。</p></div>
+    <div class="chest-showcase"><div class="chest-glow"></div><div class="coin-spray" id="coinSpray"></div><div class="chest" id="chest"><div class="chest-lid"></div><div class="chest-body"></div><div class="chest-metal"></div></div></div>
+    <button class="action" id="unlockButton" onclick="openFinalChest()">🗝️ 已蒐集三把鑰匙，開啟寶箱！</button>
+    <div class="victory-label hidden" id="victoryText">🎉 已經成功闖關！ 🎉</div><p class="hidden" id="victorySummary"></p><button class="action secondary hidden" id="againButton" onclick="restartSameCharacter()">再玩一次 ➜</button>
+  </div>
+</div>
+<script>
+'use strict';
+// 遊戲設定：更改這裡的數字，就能調整關卡與生命值。
+const LEVEL_COUNT = 3;
+const QUESTIONS_PER_LEVEL = 15;
+const MAX_HEARTS = 5;
+const LEVEL_NAMES = ['綠野森林', '地下迷宮', '落日遺跡'];
+// 九個固定顏色與名稱，依照獲得順序發放。
+const MEDAL_EVERY = 5;
+const MEDALS = [
+  {name:'草原綠徽章',color:'#4bc866',shine:'#aef9a6',dark:'#207c43'},
+  {name:'海洋藍徽章',color:'#379aff',shine:'#abdcff',dark:'#1559ae'},
+  {name:'火焰橘徽章',color:'#ff963d',shine:'#ffe0a6',dark:'#a64c14'},
+  {name:'神祕紫徽章',color:'#a66aff',shine:'#e0caff',dark:'#5d359e'},
+  {name:'紅石紅徽章',color:'#ed4553',shine:'#ffacba',dark:'#a21e38'},
+  {name:'冰晶青徽章',color:'#29d6d0',shine:'#bafffb',dark:'#087e82'},
+  {name:'櫻花粉徽章',color:'#fb81c6',shine:'#ffe0ef',dark:'#ad3c81'},
+  {name:'月光銀徽章',color:'#bdcbd9',shine:'#ffffff',dark:'#647887'},
+  {name:'傳說金徽章',color:'#ffda49',shine:'#fff7b2',dark:'#ae7819'}
+];
+const SCENES = [
+  {id:'door',name:'🏰 古堡三扇門',route:'木門',hazard:'💥',error:'TNT 爆炸！'},
+  {id:'cave',name:'🦇 幽暗洞穴',route:'洞穴',hazard:'🦇',error:'蝙蝠衝出洞穴！'},
+  {id:'road',name:'🧭 三岔尋寶路',route:'道路',hazard:'🚧',error:'前方遇到路障！'},
+  {id:'bridge',name:'🌉 危險木橋',route:'木橋',hazard:'🪵',error:'木橋斷裂！'},
+  {id:'ruins',name:'🔮 古代石門',route:'石門',hazard:'🪨',error:'掉落的巨石擋路！'},
+  {id:'mine',name:'⛏️ 神祕礦坑',route:'礦道',hazard:'🕷️',error:'礦坑蜘蛛出現！'}
+];
+const $ = id => document.getElementById(id);
+const state = {character:null,pet:null,skillUsed:false,level:0,index:0,hearts:MAX_HEARTS,keys:0,correct:0,wrong:0,streak:0,medals:0,locked:true,questions:[],scenes:[],currentScene:null,transitionTimer:null,medalToastTimer:null};
+
+function spriteSVG(kind){
+  if(kind === 'creeper'){
+    return `<svg viewBox="0 0 80 120" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+      <rect x="9" y="3" width="62" height="64" fill="#1c4c27"/><rect x="13" y="7" width="54" height="56" fill="#60b44b"/>
+      <rect x="13" y="7" width="19" height="12" fill="#77c75d"/><rect x="44" y="17" width="12" height="12" fill="#398438"/><rect x="20" y="28" width="15" height="16" fill="#14221b"/><rect x="46" y="28" width="15" height="16" fill="#14221b"/>
+      <rect x="35" y="43" width="11" height="14" fill="#14221b"/><rect x="27" y="52" width="26" height="10" fill="#14221b"/><rect x="27" y="59" width="9" height="11" fill="#14221b"/><rect x="45" y="59" width="9" height="11" fill="#14221b"/>
+      <rect x="17" y="67" width="46" height="28" fill="#256b34"/><rect x="21" y="67" width="38" height="25" fill="#57ab47"/><rect x="26" y="72" width="11" height="7" fill="#82c561"/><rect x="44" y="80" width="11" height="10" fill="#377b3a"/>
+      <rect x="15" y="95" width="21" height="22" fill="#256b34"/><rect x="19" y="95" width="13" height="18" fill="#58b04d"/><rect x="44" y="95" width="21" height="22" fill="#256b34"/><rect x="48" y="95" width="13" height="18" fill="#58b04d"/>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 80 120" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <rect x="20" y="2" width="40" height="43" fill="#5b3824"/><rect x="23" y="14" width="34" height="31" fill="#dcb18b"/><rect x="20" y="3" width="40" height="15" fill="#603d2b"/><rect x="20" y="16" width="9" height="8" fill="#603d2b"/>
+    <rect x="28" y="25" width="8" height="7" fill="#f8f3eb"/><rect x="44" y="25" width="8" height="7" fill="#f8f3eb"/><rect x="31" y="25" width="4" height="7" fill="#3574a2"/><rect x="47" y="25" width="4" height="7" fill="#3574a2"/>
+    <rect x="37" y="31" width="7" height="7" fill="#bf8b6d"/><rect x="33" y="39" width="17" height="3" fill="#78472c"/>
+    <rect x="12" y="46" width="56" height="48" fill="#246585"/><rect x="21" y="46" width="38" height="44" fill="#48aed0"/><rect x="22" y="50" width="11" height="9" fill="#6cc3dd"/>
+    <rect x="3" y="48" width="17" height="42" fill="#26769c"/><rect x="5" y="76" width="13" height="14" fill="#d9a681"/><rect x="60" y="48" width="17" height="42" fill="#26769c"/><rect x="62" y="76" width="13" height="14" fill="#d9a681"/>
+    <rect x="21" y="92" width="18" height="26" fill="#262c68"/><rect x="41" y="92" width="18" height="26" fill="#262c68"/><rect x="21" y="113" width="18" height="5" fill="#181b34"/><rect x="41" y="113" width="18" height="5" fill="#181b34"/>
+  </svg>`;
+}
+
+// 三隻「方塊世界」寵物皆使用內嵌 SVG 繪製，離線也能使用。
+// 檔案內直接保留三隻圖案，不需要任何圖片連結。
+function petSVG(pet){
+  const head='xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 112" shape-rendering="crispEdges" aria-hidden="true"';
+  if(pet==='pig'){
+    return `<svg ${head}>
+    <rect x="19" y="9" width="20" height="18" fill="#e98b9a"/><rect x="57" y="9" width="20" height="18" fill="#e98b9a"/>
+    <rect x="22" y="13" width="12" height="10" fill="#faabba"/><rect x="60" y="13" width="12" height="10" fill="#faabba"/>
+    <rect x="10" y="22" width="76" height="61" fill="#aa6274"/><rect x="15" y="19" width="66" height="60" fill="#f4a7b5"/>
+    <rect x="18" y="23" width="19" height="14" fill="#f9bfcc"/><rect x="61" y="25" width="15" height="12" fill="#e8889b"/>
+    <rect x="24" y="43" width="11" height="11" fill="#34272f"/><rect x="62" y="43" width="11" height="11" fill="#34272f"/>
+    <rect x="30" y="56" width="39" height="24" fill="#c9788c"/><rect x="34" y="60" width="31" height="16" fill="#ec879b"/>
+    <rect x="39" y="64" width="7" height="10" fill="#8d5563"/><rect x="54" y="64" width="7" height="10" fill="#8d5563"/>
+    <rect x="18" y="81" width="60" height="15" fill="#e997a7"/>
+    <rect x="20" y="95" width="20" height="15" fill="#ac6579"/><rect x="24" y="95" width="12" height="12" fill="#eea4b0"/>
+    <rect x="57" y="95" width="20" height="15" fill="#ac6579"/><rect x="61" y="95" width="12" height="12" fill="#eea4b0"/>
+    </svg>`;
+  }
+  if(pet==='dog'){
+    return `<svg ${head}>
+    <rect x="8" y="8" width="23" height="35" fill="#57595a"/><rect x="11" y="12" width="16" height="27" fill="#838c89"/>
+    <rect x="65" y="8" width="23" height="35" fill="#57595a"/><rect x="69" y="12" width="15" height="27" fill="#838c89"/>
+    <rect x="19" y="22" width="59" height="59" fill="#575d5c"/><rect x="23" y="24" width="51" height="55" fill="#a5aaa4"/>
+    <rect x="27" y="31" width="18" height="15" fill="#c4cdc6"/><rect x="62" y="36" width="10" height="14" fill="#89928e"/>
+    <rect x="29" y="44" width="9" height="9" fill="#151f21"/><rect x="61" y="44" width="9" height="9" fill="#151f21"/>
+    <rect x="32" y="59" width="34" height="27" fill="#ede4d5"/><rect x="45" y="59" width="13" height="9" fill="#232b29"/>
+    <rect x="48" y="68" width="6" height="10" fill="#45484a"/>
+    <rect x="23" y="84" width="54" height="8" fill="#d94348"/><rect x="45" y="84" width="10" height="8" fill="#f4d66f"/>
+    <rect x="24" y="92" width="18" height="18" fill="#737e7b"/><rect x="27" y="92" width="11" height="14" fill="#adbab1"/>
+    <rect x="57" y="92" width="18" height="18" fill="#737e7b"/><rect x="61" y="92" width="11" height="14" fill="#adbab1"/>
+    </svg>`;
+  }
+  if(pet==='cat'){
+    return `<svg ${head}>
+    <rect x="8" y="8" width="25" height="30" fill="#a25e31"/><rect x="63" y="8" width="25" height="30" fill="#a25e31"/>
+    <rect x="14" y="13" width="15" height="21" fill="#ed9c69"/><rect x="67" y="13" width="15" height="21" fill="#ed9c69"/>
+    <rect x="10" y="32" width="76" height="53" fill="#96562e"/><rect x="15" y="33" width="66" height="50" fill="#d58b4b"/>
+    <rect x="30" y="33" width="9" height="16" fill="#a55c35"/><rect x="51" y="33" width="10" height="16" fill="#a55c35"/>
+    <rect x="25" y="47" width="15" height="10" fill="#eeecbd"/><rect x="56" y="47" width="15" height="10" fill="#eeecbd"/>
+    <rect x="33" y="48" width="5" height="9" fill="#303925"/><rect x="57" y="48" width="5" height="9" fill="#303925"/>
+    <rect x="36" y="62" width="25" height="18" fill="#f2d5af"/><rect x="44" y="62" width="9" height="6" fill="#d26f70"/>
+    <rect x="46" y="68" width="3" height="8" fill="#644a3a"/>
+    <rect x="19" y="65" width="17" height="3" fill="#6c5138"/><rect x="62" y="65" width="17" height="3" fill="#6c5138"/>
+    <rect x="18" y="73" width="18" height="3" fill="#6c5138"/><rect x="62" y="73" width="18" height="3" fill="#6c5138"/>
+    <rect x="18" y="84" width="61" height="13" fill="#cd8344"/>
+    <rect x="20" y="95" width="20" height="16" fill="#b66d3e"/><rect x="24" y="101" width="12" height="10" fill="#fff4dc"/>
+    <rect x="57" y="95" width="20" height="16" fill="#b66d3e"/><rect x="61" y="101" width="12" height="10" fill="#fff4dc"/>
+    <path d="M79 84H91V98H85V108H77V102H81V96H75V91H79Z" fill="#c07837"/>
+    </svg>`;
+  }
+  return '';
+}
+const PET_NAMES={pig:'小豬',dog:'小狗',cat:'小貓'};
+// 豬是自動觸發；狗與貓需要玩家主動按下技能按鈕。每局限用一次。
+const PET_SKILLS={
+  pig:{icon:'🐷',name:'🛡️ 小豬防護盾',description:'被動技能：第一次答錯會自動抵擋 1 顆愛心（仍算答錯）'},
+  dog:{icon:'🐶',name:'🐾 狗狗嗅覺提示',description:'主動技能：指出一次正確的路線，但仍需自己點選'},
+  cat:{icon:'🐱',name:'🌙 貓咪夜視眼',description:'主動技能：排除一次錯誤答案，讓三選一變成二選一'}
+};
+
+// 用內嵌 SVG 繪製像素徽章：完全離線，不需外部圖片。
+function medalSVG(index){
+  const m=MEDALS[index];
+  return `<svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" aria-hidden="true">
+    <path d="M12 1h16v30H12zM36 1h16v30H36z" fill="#202c2b"/>
+    <path d="M16 5h9v23h-9zM39 5h9v23h-9z" fill="${m.dark}"/>
+    <path d="M17 5h5v17h-5zM40 5h5v17h-5z" fill="${m.color}"/>
+    <path d="M16 19H48V24H54V30H60V52H54V60H48V66H16V60H10V52H4V30H10V24H16Z" fill="#1b2522"/>
+    <path d="M17 24H47V29H53V35H57V48H52V55H46V61H18V55H12V48H7V35H12V29H17Z" fill="${m.dark}"/>
+    <path d="M19 27H45V32H50V38H54V46H49V52H43V57H21V52H15V46H11V38H15V32H19Z" fill="${m.color}"/>
+    <path d="M21 28H41V32H46V35H28V39H19V44H14V36H18V32H21Z" fill="${m.shine}" opacity=".85"/>
+    <path d="M31 32H36V37H41V42H46V47H41V52H36V57H29V52H24V47H19V42H24V37H29V32Z" fill="#1c2725"/>
+    <path d="M29 37H36V42H41V47H36V52H29V47H24V42H29Z" fill="${m.shine}"/>
+    <rect x="30" y="41" width="5" height="5" fill="${m.color}"/>
+    <rect x="17" y="47" width="4" height="4" fill="${m.shine}"/>
+  </svg>`;
+}
+function medalsHTML(count,preview=false){
+  return MEDALS.map((m,i)=>{
+    const earned=preview||i<count;
+    return `<span class="medal-slot ${earned?'earned':''}" title="第 ${i+1} 枚：${m.name}${earned?'':'（尚未取得）'}" aria-label="第 ${i+1} 枚${m.name}：${earned?'已取得':'尚未取得'}"><span class="medal-symbol">${medalSVG(i)}</span><span class="medal-number">${i+1}</span></span>`;
+  }).join('');
+}
+function updateMedals(){
+  $('medalCount').textContent=state.medals;
+  $('streakCount').textContent=state.streak;
+  $('streakProgress').textContent=state.streak%MEDAL_EVERY;
+  $('medalCollection').innerHTML=medalsHTML(state.medals);
+}
+function announceMedal(index){
+  if(state.medalToastTimer)clearTimeout(state.medalToastTimer);
+  $('awardedMedal').innerHTML=medalSVG(index);
+  $('awardName').textContent=`第 ${index+1} 枚｜${MEDALS[index].name}`;
+  hide('medalAward');
+  // 重新套用進場動畫
+  void $('medalAward').offsetWidth;
+  show('medalAward');
+  state.medalToastTimer=setTimeout(()=>{hide('medalAward');state.medalToastTimer=null;},1950);
+}
+function shuffle(arr){
+  const copy=arr.slice();
+  for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]];}
+  return copy;
+}
+function getHistory(){try{return JSON.parse(localStorage.getItem('multiply_quest_usage_v3')||'{}')||{};}catch(e){return {};}}
+function setHistory(history){try{localStorage.setItem('multiply_quest_usage_v3',JSON.stringify(history));}catch(e){} }
+function randomWeightedIndex(items){
+  const total=items.reduce((sum,item)=>sum+item.weight,0);
+  let ticket=Math.random()*total;
+  for(let i=0;i<items.length;i++){ticket-=items[i].weight;if(ticket<=0)return i;}
+  return items.length-1;
+}
+function makeQuestionSets(){
+  // 九九乘法共有 2~9 的 64 種「有方向」算式，不出現 1×n 或 n×1。
+  // 一局的 45 題，不會重複同一個完整算式；同一關連反向算式也不會重複。
+  // localStorage 記錄過去用量，重新開局會優先抽較少出現的題目。
+  const pairs=[];
+  for(let a=2;a<=9;a++)for(let b=a;b<=9;b++)pairs.push({pair:`${a}-${b}`,options:a===b?[{a,b}]:[{a,b},{a:b,b:a}]});
+  const history=getHistory();
+  const usedExpressions=new Set();
+  const perLevel=[];
+  for(let level=1;level<=LEVEL_COUNT;level++){
+    const chosenPairs=new Set(),result=[];
+    while(result.length<QUESTIONS_PER_LEVEL){
+      const candidates=[];
+      for(const group of pairs){
+        if(chosenPairs.has(group.pair))continue;
+        for(const op of group.options){
+          const id=`${op.a}x${op.b}`;
+          if(usedExpressions.has(id))continue;
+          let factor=1;
+          if(level===1)factor=Math.max(op.a,op.b)<=6?2.3:0.95;
+          if(level===2)factor=Math.max(op.a,op.b)>=6?1.9:1;
+          if(level===3)factor=Math.min(op.a,op.b)>=5?2.7:0.8;
+          // 題目練習過越多次，抽到的機率越低。
+          const weight=factor*(0.7+Math.random()*0.6)/Math.pow(1+(history[id]||0),1.5);
+          candidates.push({a:op.a,b:op.b,id,pair:group.pair,weight});
+        }
+      }
+      if(!candidates.length)throw new Error('題庫不足，請檢查關卡設定');
+      const chosen=candidates[randomWeightedIndex(candidates)];
+      chosenPairs.add(chosen.pair);usedExpressions.add(chosen.id);
+      result.push({a:chosen.a,b:chosen.b,answer:chosen.a*chosen.b});
+      history[chosen.id]=(history[chosen.id]||0)+1;
+    }
+    perLevel.push(shuffle(result));
+  }
+  setHistory(history);
+  return perLevel;
+}
+function makeScenes(){
+  return Array.from({length:LEVEL_COUNT},()=>{
+    const all=[];
+    while(all.length<QUESTIONS_PER_LEVEL)all.push(...shuffle(SCENES));
+    return all.slice(0,QUESTIONS_PER_LEVEL);
+  });
+}
+function makeChoices(q){
+  const answer=q.answer;
+  const decoys=[];
+  const neighbors=[q.a*(q.b+1),q.a*(q.b-1),(q.a+1)*q.b,(q.a-1)*q.b,answer+2,answer-2,answer+5,answer-5,answer+9,answer-9,answer+1,answer-1];
+  for(const n of shuffle(neighbors)){
+    if(n>=4&&n<=90&&n!==answer&&!decoys.includes(n))decoys.push(n);
+    if(decoys.length===2)break;
+  }
+  let bump=3;
+  while(decoys.length<2){const next=answer+bump++;if(!decoys.includes(next)&&next!==answer)decoys.push(next);}
+  return shuffle([answer,...decoys]);
+}
+function selectCharacter(character){
+  state.character=character;
+  ['steve','creeper'].forEach(type=>{
+    const item=$(type==='steve'?'chooseSteve':'chooseCreeper');
+    const selected=type===character;
+    item.classList.toggle('selected',selected);
+    item.setAttribute('aria-pressed',String(selected));
+  });
+  $('startButton').disabled=false;$('startButton').textContent='下一步：選擇冒險寵物 ➜';
+  updateHero();
+}
+function goToPetSelect(){
+  if(!state.character)return;
+  $('chosenHeroInfo').textContent=`你的冒險主角：${state.character==='steve'?'史蒂夫':'苦力怕'}`;
+  hide('introScreen');show('petSelectScreen');
+}
+function returnToHeroSelect(){hide('petSelectScreen');show('introScreen');}
+function selectPet(pet){
+  if(!Object.hasOwn(PET_NAMES,pet))return;
+  state.pet=pet;
+  ['pig','dog','cat'].forEach(type=>{
+    const item=$({pig:'choosePig',dog:'chooseDog',cat:'chooseCat'}[type]);
+    const selected=pet===type;
+    item.classList.toggle('selected',selected);
+    item.setAttribute('aria-pressed',String(selected));
+  });
+  $('confirmPetButton').disabled=false;
+  $('confirmPetButton').textContent=`🐾 和${PET_NAMES[pet]}一起出發！`;
+  updatePet();updatePetSkill();
+}
+function updateHero(){
+  if(!state.character)return;
+  $('heroSprite').innerHTML=spriteSVG(state.character);
+  $('heroName').textContent=state.character==='steve'?'史蒂夫':'苦力怕';
+}
+function updatePet(){
+  if(!state.pet){hide('petZone');return;}
+  $('petSprite').innerHTML=petSVG(state.pet);
+  $('petName').textContent=`🐾 ${PET_NAMES[state.pet]}`;
+  show('petZone');
+}
+// 畫面會即時反映選擇的寵物、剩餘技能次數與是否可使用。
+function updatePetSkill(){
+  const skill=PET_SKILLS[state.pet];
+  if(!skill){$('skillIcon').textContent='🐾';$('skillName').textContent='寵物技能';$('skillDescription').textContent='先選擇冒險寵物';$('skillButton').textContent='尚未選擇';$('skillButton').disabled=true;return;}
+  $('skillIcon').textContent=skill.icon;
+  $('skillName').textContent=skill.name;
+  $('skillDescription').textContent=state.skillUsed?'本局的技能已使用（0 / 1），重新挑戰才能恢復':skill.description+'（剩餘 1 / 1）';
+  const button=$('skillButton');button.classList.toggle('auto-skill',state.pet==='pig'&&!state.skillUsed);
+  if(state.skillUsed){button.textContent='✓ 已使用';button.disabled=true;}
+  else if(state.pet==='pig'){button.textContent='🛡️ 自動防護';button.disabled=true;}
+  else{button.textContent=state.pet==='dog'?'🐾 使用狗狗提示':'🌙 使用貓眼';button.disabled=state.locked;}
+}
+function usePetSkill(){
+  // 僅答題中的狗／貓可以主動使用。不可在選角、關卡結算或答題動畫時偷用。
+  if(state.locked||state.skillUsed||!['dog','cat'].includes(state.pet))return;
+  const q=state.questions[state.level]?.[state.index];
+  if(!q)return;
+  const routes=[...$('routes').querySelectorAll('.route')];
+  if(routes.length!==3)return;
+  if(state.pet==='dog'){
+    const right=routes.find(el=>Number(el.querySelector('.answer-sign').textContent)===q.answer);
+    if(!right)return;
+    right.classList.add('hint-correct');
+    feedback('🐶 汪！小狗找到了發光的正確路線！請自己點選。',false);
+  } else {
+    const wrong=shuffle(routes.filter(el=>Number(el.querySelector('.answer-sign').textContent)!==q.answer))[0];
+    if(!wrong)return;
+    wrong.classList.add('hint-removed');
+    wrong.disabled=true;
+    wrong.setAttribute('aria-label','此條錯誤路線已被貓咪排除');
+    wrong.querySelector('.route-caption').textContent='✖ 貓咪已排除';
+    feedback('🐱 喵！小貓排除了一條錯路，現在是二選一！',false);
+  }
+  state.skillUsed=true;
+  updatePetSkill();
+}
+function show(id){$(id).classList.remove('hidden')}
+function hide(id){$(id).classList.add('hidden')}
+function stopTransitions(){if(state.transitionTimer){clearTimeout(state.transitionTimer);state.transitionTimer=null;}}
+function updateHUD(){
+  $('lifeCount').textContent=state.hearts;$('keyCount').textContent=state.keys;
+  $('hearts').innerHTML=Array.from({length:MAX_HEARTS},(_,i)=>`<span class="heart ${i>=state.hearts?'lost':''}" aria-hidden="true">♥</span>`).join('');
+  $('keySlots').innerHTML=Array.from({length:LEVEL_COUNT},(_,i)=>`<span class="key-slot ${i>=state.keys?'locked':''}" aria-hidden="true">🗝️</span>`).join('');
+  $('levelLabel').textContent=`第 ${state.level+1} 關｜${LEVEL_NAMES[state.level]}`;
+  $('questionNumber').textContent=Math.min(state.index+1,QUESTIONS_PER_LEVEL);
+  $('rightCount').textContent=state.correct;$('wrongCount').textContent=state.wrong;
+  const finished=state.level*QUESTIONS_PER_LEVEL+state.index;
+  $('progressFill').style.width=`${finished/(LEVEL_COUNT*QUESTIONS_PER_LEVEL)*100}%`;
+  $('progressText').textContent=`${finished} / ${LEVEL_COUNT*QUESTIONS_PER_LEVEL}`;
+  $('world').dataset.level=String(state.level+1);
+  updateMedals();updatePetSkill();
+}
+function resetHero(){
+  $('heroZone').classList.remove('walking','celebrate');
+  $('heroZone').style.setProperty('--dx','0px');
+  $('petZone').classList.remove('walking','celebrate');
+  $('petZone').style.setProperty('--dx','0px');
+  $('petZone').style.removeProperty('--pet-side');
+}
+function startAdventure(){
+  if(!state.character||!state.pet)return;
+  stopTransitions();
+  if(state.medalToastTimer)clearTimeout(state.medalToastTimer);
+  state.medalToastTimer=null;hide('medalAward');
+  state.level=0;state.index=0;state.skillUsed=false;state.hearts=MAX_HEARTS;state.keys=0;state.correct=0;state.wrong=0;state.streak=0;state.medals=0;state.locked=false;
+  state.questions=makeQuestionSets();state.scenes=makeScenes();
+  ['introScreen','petSelectScreen','levelScreen','failScreen','treasureScreen'].forEach(hide);
+  resetHero();updateHero();updatePet();renderQuestion();
+}
+function renderQuestion(){
+  state.locked=false;
+  hide('feedback');hide('trap');$('trap').classList.remove('protected');resetHero();
+  const q=state.questions[state.level][state.index];
+  const scene=state.scenes[state.level][state.index];state.currentScene=scene;
+  $('world').dataset.scene=scene.id;
+  $('sceneName').textContent=scene.name;
+  $('questionText').textContent=`${q.a} × ${q.b} = ?`;
+  $('routes').innerHTML='';
+  makeChoices(q).forEach((answer,i)=>{
+    const button=document.createElement('button');
+    button.type='button';button.className='route';
+    button.setAttribute('aria-label',`第 ${i+1} 條路，答案 ${answer}`);
+    button.innerHTML=`<span class="answer-sign">${answer}</span><span class="route-art" aria-hidden="true"></span><span class="route-caption">${scene.route} ${i+1}</span><span class="approach" aria-hidden="true"></span>`;
+    button.addEventListener('click',()=>chooseAnswer(answer,button));
+    $('routes').appendChild(button);
+  });
+  updateHUD();
+}
+function feedback(text,isBad){
+  const el=$('feedback');el.textContent=text;el.className=`feedback${isBad?' bad':''}`;
+}
+function walkToChoice(button){
+  const heroRect=$('heroZone').getBoundingClientRect();
+  const buttonRect=button.getBoundingClientRect();
+  const dx=(buttonRect.left+buttonRect.width/2)-(heroRect.left+heroRect.width/2);
+  $('heroZone').style.setProperty('--dx',`${dx.toFixed(1)}px`);
+  $('petZone').style.setProperty('--dx',`${dx.toFixed(1)}px`);
+  // 往左走時，寵物跟在右後方；往右走時，寵物跟在左後方。
+  const followDistance=window.innerWidth<=700?67:105;
+  $('petZone').style.setProperty('--pet-side',`${dx< -15?followDistance:-followDistance}px`);
+  $('heroZone').classList.add('walking');
+  $('petZone').classList.add('walking');
+}
+function chooseAnswer(answer,button){
+  if(state.locked)return;
+  state.locked=true;
+  [...$('routes').children].forEach(x=>x.disabled=true);
+  const q=state.questions[state.level][state.index];
+  walkToChoice(button);
+  if(answer===q.answer){
+    state.correct++;
+    state.streak++;
+    button.classList.add('success');
+    if(state.streak%MEDAL_EVERY===0 && state.medals<MEDALS.length){
+      const index=state.medals++;
+      feedback('🏅 連續答對 5 題！獲得彩色像素徽章！',false);
+      announceMedal(index);
+    }else{
+      feedback('✔ 答對了！成功通過機關！',false);
+    }
+    state.transitionTimer=setTimeout(finishQuestion,1060);
+  }else{
+    state.wrong++;state.streak=0;
+    const pigBlocked=state.pet==='pig'&&!state.skillUsed;
+    if(pigBlocked)state.skillUsed=true; // 小豬被動防護：僅第一次答錯生效。
+    else state.hearts--;
+    button.classList.add('failed');
+    const scene=state.currentScene;
+    $('trap').classList.toggle('protected',pigBlocked);
+    $('trapSymbol').textContent=pigBlocked?'🐷🛡️':scene.hazard;
+    $('trap').querySelector('.trap-mark').textContent=pigBlocked?'✔':'✖';
+    $('trapDescription').textContent=pigBlocked?'小豬幫你擋住陷阱！這次不扣愛心，但連續答對重新計算！':`${scene.error}　扣 1 顆愛心，連續答對重新計算！`;
+    show('trap');
+    state.transitionTimer=setTimeout(()=>{
+      hide('trap');
+      if(state.hearts<=0){showFailure();return;}
+      finishQuestion();
+    },1400);
+  }
+  updateHUD();
+}
+function finishQuestion(){
+  state.transitionTimer=null;
+  state.index++;
+  if(state.index<QUESTIONS_PER_LEVEL){renderQuestion();return;}
+  if(state.hearts<=0){showFailure();return;}
+  state.keys++;
+  updateHUD();
+  $('progressFill').style.width=`${(state.level+1)/LEVEL_COUNT*100}%`;
+  $('progressText').textContent=`${(state.level+1)*QUESTIONS_PER_LEVEL} / ${LEVEL_COUNT*QUESTIONS_PER_LEVEL}`;
+  if(state.level===LEVEL_COUNT-1){showTreasure();return;}
+  $('levelTitle').textContent=`✨ 第 ${state.level+1} 關完成！`;
+  $('keyReward').textContent=`已取得第 ${state.keys} 把鑰匙！`;
+  $('levelMessage').textContent=`還剩 ${state.hearts} 顆愛心，${PET_NAMES[state.pet]}會陪你繼續前往「${LEVEL_NAMES[state.level+1]}」尋寶！`;
+  show('levelScreen');
+}
+function continueAdventure(){
+  hide('levelScreen');
+  state.level++;state.index=0;
+  renderQuestion();
+}
+function showFailure(){
+  state.locked=true;
+  $('failSummary').textContent=`與${PET_NAMES[state.pet]}一起挑戰：答對 ${state.correct} 題、答錯 ${state.wrong} 題、取得 ${state.keys} 把鑰匙、獲得 ${state.medals} / 9 枚徽章。寵物技能：${state.skillUsed?'已使用':'尚未使用'}。`;
+  show('failScreen');
+}
+function restartSameCharacter(){
+  startAdventure();
+}
+function backToCharacterSelect(){
+  stopTransitions();
+  ['failScreen','levelScreen','treasureScreen','petSelectScreen'].forEach(hide);
+  show('introScreen');
+}
+function showTreasure(){
+  state.locked=true;
+  $('chest').classList.remove('open');
+  $('coinSpray').classList.remove('open');
+  $('coinSpray').innerHTML='';
+  $('treasureTitle').textContent='🏆 你找到了神祕寶箱！';
+  $('treasureInstructions').textContent='三關的乘法機關都破解了！現在你手中握有三把鑰匙。';
+  show('unlockButton');$('unlockButton').disabled=false;
+  hide('victoryText');hide('victorySummary');hide('againButton');
+  $('finalMedalCount').textContent=`${state.medals} / 9`;
+  $('finalMedals').innerHTML=medalsHTML(state.medals);
+  show('treasureScreen');
+}
+function openFinalChest(){
+  if(state.keys<3 || !$('chest'))return;
+  $('unlockButton').disabled=true;hide('unlockButton');
+  const spray=$('coinSpray');spray.innerHTML='';
+  for(let i=0;i<27;i++){
+    const coin=document.createElement('span');coin.className='coin';
+    coin.style.setProperty('--tx',`${Math.round((Math.random()-.5)*300)}px`);
+    coin.style.setProperty('--ty',`${Math.round(48+Math.random()*86)}px`);
+    coin.style.setProperty('--delay',`${(Math.random()*.55).toFixed(2)}s`);
+    spray.appendChild(coin);
+  }
+  $('chest').classList.add('open');spray.classList.add('open');
+  $('treasureTitle').textContent='💰 寶箱已開啟！';
+  $('treasureInstructions').textContent='金幣從寶箱裡飛出來了！';
+  state.transitionTimer=setTimeout(()=>{
+    state.transitionTimer=null;
+    show('victoryText');
+    $('victorySummary').textContent=`🐾 ${PET_NAMES[state.pet]}陪你完成 45 題！答對 ${state.correct} 題、答錯 ${state.wrong} 題，剩下 ${state.hearts} 顆愛心，獲得 ${state.medals} / 9 枚徽章！寵物技能：${state.skillUsed?'已使用':'尚未使用'}。`;
+    show('victorySummary');show('againButton');
+  },1900);
+}
+// 鍵盤 1、2、3 可直接選三條路。
+document.addEventListener('keydown',event=>{
+  if(event.key!=='1'&&event.key!=='2'&&event.key!=='3')return;
+  if(state.locked||!$('introScreen').classList.contains('hidden')||!$('petSelectScreen').classList.contains('hidden')||!$('levelScreen').classList.contains('hidden')||!$('failScreen').classList.contains('hidden')||!$('treasureScreen').classList.contains('hidden'))return;
+  const button=$('routes').children[Number(event.key)-1];
+  if(button&&!button.disabled)button.click();
+});
+$('startSteve').innerHTML=spriteSVG('steve');
+$('startCreeper').innerHTML=spriteSVG('creeper');
+$('startPig').innerHTML=petSVG('pig');
+$('startDog').innerHTML=petSVG('dog');
+$('startCat').innerHTML=petSVG('cat');
+$('introMedals').innerHTML=medalsHTML(0,true);
+updateHUD();
+</script>
+</body>
+</html>
